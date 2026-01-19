@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<title>Arapça-Türkçe Sözlük</title>
+<title>Arapça-Türkçe Sözlük (Firebase)</title>
 <style>
 body { font-family: system-ui; padding:20px; background:#f5f5f5; margin:0; }
 h2 { margin-top:20px; }
@@ -13,12 +13,8 @@ button:hover { background:#1d4ed8; }
 .nav-btns button { width:auto; }
 #list { display:grid; grid-template-columns:1fr; gap:15px; }
 
-@media(min-width:600px){
-  #list { grid-template-columns:1fr 1fr; }
-}
-@media(min-width:900px){
-  #list { grid-template-columns:1fr 1fr 1fr; }
-}
+@media(min-width:600px){ #list { grid-template-columns:1fr 1fr; } }
+@media(min-width:900px){ #list { grid-template-columns:1fr 1fr 1fr; } }
 
 .card { padding:15px; border-radius:8px; color:white; box-shadow:0 2px 6px rgba(0,0,0,0.1); display:flex; flex-direction:column; }
 .ar { font-size:22px; direction:rtl; font-family:"Scheherazade","Amiri",serif; margin-top:5px; }
@@ -53,7 +49,6 @@ button:hover { background:#1d4ed8; }
   <button onclick="showSection('search')">Kelime Ara</button>
 </div>
 
-<!-- EKLEME BÖLÜMÜ -->
 <div id="add-section">
 <h2>Kelime Ekle / Düzenle</h2>
 <form id="entryForm">
@@ -85,21 +80,55 @@ button:hover { background:#1d4ed8; }
 </form>
 </div>
 
-<!-- ARAMA BÖLÜMÜ -->
 <div id="search-section" style="display:none;">
 <h2>Kelime Arama</h2>
 <input id="search" placeholder="Arapça veya Türkçe arayın">
 <div id="list"></div>
 </div>
 
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
 <script>
-// GÖRÜNÜRLÜK
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyA1Fmoo3_bJTT2R2hCjBoQTBhiohwfdnk0",
+  authDomain: "sozluk-e49c1.firebaseapp.com",
+  projectId: "sozluk-e49c1",
+  storageBucket: "sozluk-e49c1.firebasestorage.app",
+  messagingSenderId: "996478619056",
+  appId: "1:996478619056:web:11840e7fbda02b84ad9a75",
+  measurementId: "G-6075H1T8JV"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app); const firebaseConfig = {
+  apiKey: "XXX",
+  authDomain: "XXX.firebaseapp.com",
+  databaseURL: "https://XXX-default-rtdb.firebaseio.com",
+  projectId: "XXX",
+  storageBucket: "XXX.appspot.com",
+  messagingSenderId: "XXX",
+  appId: "XXX"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
 function showSection(sec){
   document.getElementById('add-section').style.display = sec==='add'?'block':'none';
   document.getElementById('search-section').style.display = sec==='search'?'block':'none';
 }
 
-// ARAPÇA NORMALİZASYON
 function normalizeArabic(text){
   if(!text) return "";
   return text.replace(/[\u064B-\u065F\u0670]/g,"")
@@ -115,113 +144,93 @@ function normalizeArabic(text){
 function render(){
   const list = document.getElementById("list");
   const query = document.getElementById("search").value.trim();
-  const data = JSON.parse(localStorage.getItem("dict") || "[]");
-  list.innerHTML = "";
+  db.ref('words').once('value', snapshot => {
+    const dataObj = snapshot.val() || {};
+    const data = Object.values(dataObj);
+    list.innerHTML = "";
 
-  data.filter(e => {
-    const ar = normalizeArabic(e.word + " " + (e.exAr || ""));
-    const tr = (e.tr || "").toLowerCase();
-    return ar.includes(normalizeArabic(query)) || tr.includes(query.toLowerCase());
-  }).forEach(e => {
-    let ex = e.exAr || "";
-    if(query){
-      const qReg = new RegExp(query,"gi");
-      ex = ex.replace(qReg, match => `<strong class="hl">${match}</strong>`);
-    }
-    list.innerHTML += `
-      <div class="card ${e.type}">
-        <div class="card-title-container">
-          <div class="left">
-            <div class="card-title">${e.word}</div>
-            <span class="tag">${e.type}</span>
+    data.filter(e => {
+      const ar = normalizeArabic(e.word + " " + (e.exAr || ""));
+      const tr = (e.tr || "").toLowerCase();
+      return ar.includes(normalizeArabic(query)) || tr.includes(query.toLowerCase());
+    }).forEach(e => {
+      let ex = e.exAr || "";
+      if(query){
+        const qReg = new RegExp(query,"gi");
+        ex = ex.replace(qReg, match => `<strong class="hl">${match}</strong>`);
+      }
+      list.innerHTML += `
+        <div class="card ${e.type}">
+          <div class="card-title-container">
+            <div class="left">
+              <div class="card-title">${e.word}</div>
+              <span class="tag">${e.type}</span>
+            </div>
+            <div class="right">
+              <button class="edit" onclick="editEntry('${e.id}')">Düzenle</button>
+              <button class="delete" onclick="deleteEntry('${e.id}')">Sil</button>
+            </div>
           </div>
-          <div class="right">
-            <button class="edit" onclick="editEntry(${e.id})">Düzenle</button>
-            <button class="delete" onclick="deleteEntry(${e.id})">Sil</button>
-          </div>
-        </div>
-        <div><b>Türkçe:</b> ${e.tr}</div>
-        ${ex ? `<div class="ar ex">${ex}</div>` : ""}
-        ${e.exTr ? `<div>${e.exTr}</div>` : ""}
-        ${e.note ? `<div><i>Not:</i> ${e.note}</div>` : ""}
-      </div>`;
+          <div><b>Türkçe:</b> ${e.tr}</div>
+          ${ex ? `<div class="ar ex">${ex}</div>` : ""}
+          ${e.exTr ? `<div>${e.exTr}</div>` : ""}
+          ${e.note ? `<div><i>Not:</i> ${e.note}</div>` : ""}
+        </div>`;
+    });
   });
 }
 
-// ARAMA EVENT (mobil ve masaüstü uyumlu)
-const searchInput = document.getElementById("search");
-searchInput.addEventListener("input", render);
-searchInput.addEventListener("keyup", render); // mobil klavye uyumu
+// Mobil ve masaüstü arama uyumu
+document.getElementById("search").addEventListener("input", render);
+document.getElementById("search").addEventListener("keyup", render);
 
-// EKLEME / DÜZENLEME FORMU
+// EKLEME / DÜZENLEME
 document.getElementById("entryForm").addEventListener("submit", function(e){
   e.preventDefault();
-  const id = document.getElementById("editId").value;
-  const word = document.getElementById("word").value.trim();
-  const tr = document.getElementById("tr").value.trim();
-  if(!word || !tr){ alert("Arapça kelime ve Türkçe karşılık zorunlu"); return; }
+  const id = document.getElementById("editId").value || db.ref().child('words').push().key;
+  const entry = {
+    id,
+    type: document.getElementById("type").value,
+    word: document.getElementById("word").value.trim(),
+    tr: document.getElementById("tr").value.trim(),
+    exAr: document.getElementById("exAr").value.trim(),
+    exTr: document.getElementById("exTr").value.trim(),
+    note: document.getElementById("note").value.trim()
+  };
 
-  const data = JSON.parse(localStorage.getItem("dict") || "[]");
-
-  if(id){
-    const index = data.findIndex(x => x.id == id);
-    if(index>-1){
-      data[index] = {
-        id: Number(id),
-        type: document.getElementById("type").value,
-        word, tr,
-        exAr: document.getElementById("exAr").value.trim(),
-        exTr: document.getElementById("exTr").value.trim(),
-        note: document.getElementById("note").value.trim()
-      };
-    }
-    alert("Kelime güncellendi!");
-  } else {
-    data.unshift({
-      id: Date.now(),
-      type: document.getElementById("type").value,
-      word, tr,
-      exAr: document.getElementById("exAr").value.trim(),
-      exTr: document.getElementById("exTr").value.trim(),
-      note: document.getElementById("note").value.trim()
-    });
-    alert("Kelime eklendi!");
-  }
-
-  localStorage.setItem("dict", JSON.stringify(data));
-  this.reset();
-  document.getElementById("editId").value = "";
-  render();
-  showSection('search');
+  db.ref('words/' + id).set(entry).then(()=>{
+    alert(id ? "Kelime güncellendi!" : "Kelime eklendi!");
+    document.getElementById("entryForm").reset();
+    document.getElementById("editId").value = "";
+    render();
+    showSection('search');
+  });
 });
 
 // DÜZENLEME
 function editEntry(id){
-  const data = JSON.parse(localStorage.getItem("dict") || "[]");
-  const entry = data.find(e => e.id==id);
-  if(!entry) return;
-  showSection('add');
-  document.getElementById("editId").value = entry.id;
-  document.getElementById("type").value = entry.type;
-  document.getElementById("word").value = entry.word;
-  document.getElementById("tr").value = entry.tr;
-  document.getElementById("exAr").value = entry.exAr;
-  document.getElementById("exTr").value = entry.exTr;
-  document.getElementById("note").value = entry.note;
+  db.ref('words/' + id).once('value', snap=>{
+    const entry = snap.val();
+    if(!entry) return;
+    showSection('add');
+    document.getElementById("editId").value = entry.id;
+    document.getElementById("type").value = entry.type;
+    document.getElementById("word").value = entry.word;
+    document.getElementById("tr").value = entry.tr;
+    document.getElementById("exAr").value = entry.exAr;
+    document.getElementById("exTr").value = entry.exTr;
+    document.getElementById("note").value = entry.note;
+  });
 }
 
 // SİL
 function deleteEntry(id){
   if(!confirm("Bu kelimeyi silmek istediğinize emin misiniz?")) return;
-  let data = JSON.parse(localStorage.getItem("dict") || "[]");
-  data = data.filter(e => e.id != id);
-  localStorage.setItem("dict", JSON.stringify(data));
-  render();
+  db.ref('words/' + id).remove().then(()=>{ render(); });
 }
 
-// SAYFA AÇILIRKEN RENDER ET
+// Sayfa açıldığında render et
 render();
 </script>
-
 </body>
 </html>
