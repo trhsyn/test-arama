@@ -11,21 +11,37 @@ input { width:100%; padding:10px; font-size:18px; }
 </style>
 </head>
 <body>
+<h2>Kelime Ekle</h2>
 
-<h2>🔍 Arapça Arama Testi</h2>
+<form id="entryForm">
 
-<input id="search" placeholder="كتب / كَتَبَ / كاتب">
+  <label>Kelime Türü</label>
+  <select id="type">
+    <option value="isim">İsim</option>
+    <option value="fiil">Fiil</option>
+    <option value="mastar">Mastar</option>
+    <option value="deyim">Deyim</option>
+  </select>
 
-<div id="list"></div>
+  <label>Arapça Kelime</label>
+  <input id="word" required>
 
-<script>
-const data = [
-  {
-    word: "كَتَبَ",
-    meaning: "yazdı",
-    exAr: "كَتَبَ الطَّالِبُ الدَّرْسَ"
-  }
-];
+  <label>Türkçe Karşılık</label>
+  <input id="tr" required>
+
+  <label>Arapça Örnek Cümle</label>
+  <textarea id="exAr"></textarea>
+
+  <label>Türkçe Çeviri</label>
+  <textarea id="exTr"></textarea>
+
+  <label>Not</label>
+  <textarea id="note"></textarea>
+
+  <button type="submit">➕ Ekle</button>
+</form>
+
+<hr>
 
 function normalizeArabic(text) {
   return text
@@ -62,6 +78,35 @@ function render() {
 
 search.addEventListener("input", render);
 render();
+</script>
+<script>
+const form = document.getElementById("entryForm");
+
+form.addEventListener("submit", function (e) {
+  e.preventDefault();
+
+  const entry = {
+    id: Date.now(),
+    type: type.value,
+    word: word.value.trim(),
+    tr: tr.value.trim(),
+    exAr: exAr.value.trim(),
+    exTr: exTr.value.trim(),
+    note: note.value.trim()
+  };
+
+  if (!entry.word || !entry.tr) {
+    alert("Arapça kelime ve Türkçe karşılık zorunlu");
+    return;
+  }
+
+  const data = JSON.parse(localStorage.getItem("dict") || "[]");
+  data.push(entry);
+  localStorage.setItem("dict", JSON.stringify(data));
+
+  form.reset();
+  alert("Kelime eklendi");
+});
 </script>
 
 </body>
