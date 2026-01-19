@@ -7,19 +7,36 @@
 body { font-family: system-ui; padding:20px; background:#f5f5f5; }
 h2 { margin-top:20px; }
 input, textarea, select, button { width:100%; padding:8px; margin:5px 0 15px 0; font-size:16px; box-sizing:border-box; border-radius:5px; border:1px solid #ccc; }
-button { cursor:pointer; background:#2563eb; color:white; border:none; border-radius:5px; font-size:16px; padding:10px; }
+button { cursor:pointer; background:#2563eb; color:white; border:none; border-radius:5px; font-size:16px; padding:8px; }
 button:hover { background:#1d4ed8; }
 .nav-btns { margin-bottom:20px; }
 .nav-btns button { width:auto; margin-right:10px; }
-.card { margin-top:15px; padding:15px; border-radius:8px; color:white; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+.card { margin-top:15px; padding:15px; border-radius:8px; color:white; box-shadow: 0 2px 6px rgba(0,0,0,0.1); position: relative; }
 .card-title { font-weight:bold; font-size:18px; margin-bottom:5px; }
 .tag { background:rgba(255,255,255,0.3); color:white; padding:2px 6px; border-radius:4px; font-size:12px; margin-left:5px; }
 .ar { font-size:22px; direction:rtl; font-family: "Scheherazade", "Amiri", serif; margin-top:5px; }
 .ex strong.hl { background:#ffeb3b; color:#000; padding:0 2px; border-radius:2px; }
+
+/* RENKLENDİRME */
 .card.isim { background:#16a34a; }   /* yeşil */
 .card.fiil { background:#2563eb; }   /* mavi */
 .card.mastar { background:#f97316; } /* turuncu */
 .card.deyim { background:#7c3aed; }  /* mor */
+
+/* Edit / Delete butonları */
+.card button.edit, .card button.delete {
+  position: absolute;
+  top:10px;
+  padding:4px 8px;
+  font-size:12px;
+  border-radius:4px;
+  border:none;
+  color:white;
+}
+.card button.edit { right: 60px; background:#fbbf24; }
+.card button.delete { right: 10px; background:#ef4444; }
+.card button.edit:hover { background:#f59e0b; }
+.card button.delete:hover { background:#dc2626; }
 </style>
 </head>
 <body>
@@ -31,8 +48,9 @@ button:hover { background:#1d4ed8; }
 
 <!-- EKLEME BÖLÜMÜ -->
 <div id="add-section">
-<h2>Kelime Ekle</h2>
+<h2>Kelime Ekle / Düzenle</h2>
 <form id="entryForm">
+  <input type="hidden" id="editId">
   <label>Kelime Türü</label>
   <select id="type">
     <option value="isim">İsim</option>
@@ -56,7 +74,7 @@ button:hover { background:#1d4ed8; }
   <label>Not</label>
   <textarea id="note"></textarea>
 
-  <button type="submit">➕ Ekle</button>
+  <button type="submit">➕ Kaydet</button>
 </form>
 </div>
 
@@ -68,87 +86,122 @@ button:hover { background:#1d4ed8; }
 </div>
 
 <script>
-// GÖRÜNÜRLÜK YÖNETİMİ
-function showSection(sec) {
+// GÖRÜNÜRLÜK
+function showSection(sec){
   document.getElementById('add-section').style.display = sec==='add'?'block':'none';
   document.getElementById('search-section').style.display = sec==='search'?'block':'none';
 }
 
 // ARAPÇA NORMALİZASYON
-function normalizeArabic(text) {
+function normalizeArabic(text){
   if(!text) return "";
-  return text
-    .replace(/[\u064B-\u065F\u0670]/g,"")
-    .replace(/\u0640/g,"")
-    .replace(/[آأإٱ]/g,"ا")
-    .replace(/[يى]/g,"ي")
-    .replace(/ة/g,"ه")
-    .replace(/ؤ/g,"و")
-    .replace(/ئ/g,"ي")
-    .trim();
+  return text.replace(/[\u064B-\u065F\u0670]/g,"")
+             .replace(/\u0640/g,"")
+             .replace(/[آأإٱ]/g,"ا")
+             .replace(/[يى]/g,"ي")
+             .replace(/ة/g,"ه")
+             .replace(/ؤ/g,"و")
+             .replace(/ئ/g,"ي").trim();
 }
 
 // RENDER FONKSİYONU
-function render() {
+function render(){
   const list = document.getElementById("list");
   const query = document.getElementById("search").value.trim();
   const data = JSON.parse(localStorage.getItem("dict") || "[]");
-
   list.innerHTML = "";
 
-  data
-    .filter(e => {
-      const ar = normalizeArabic(e.word + " " + (e.exAr || ""));
-      const tr = (e.tr || "").toLowerCase();
-      return ar.includes(normalizeArabic(query)) || tr.includes(query.toLowerCase());
-    })
-    .forEach(e => {
-      let ex = e.exAr || "";
-      if(query){
-        // arama kelimesini örnek cümlede vurgula
-        const qReg = new RegExp(query, "gi");
-        ex = ex.replace(qReg, match => `<strong class="hl">${match}</strong>`);
-      }
-      list.innerHTML += `
-        <div class="card ${e.type}">
-          <div class="card-title">
-            ${e.word} <span class="tag">${e.type}</span>
-          </div>
-          <div><b>Türkçe:</b> ${e.tr}</div>
-          ${ex ? `<div class="ar ex">${ex}</div>` : ""}
-          ${e.exTr ? `<div>${e.exTr}</div>` : ""}
-          ${e.note ? `<div><i>Not:</i> ${e.note}</div>` : ""}
-        </div>`;
-    });
+  data.filter(e => {
+    const ar = normalizeArabic(e.word + " " + (e.exAr || ""));
+    const tr = (e.tr || "").toLowerCase();
+    return ar.includes(normalizeArabic(query)) || tr.includes(query.toLowerCase());
+  }).forEach(e => {
+    let ex = e.exAr || "";
+    if(query){
+      const qReg = new RegExp(query,"gi");
+      ex = ex.replace(qReg, match => `<strong class="hl">${match}</strong>`);
+    }
+    list.innerHTML += `
+      <div class="card ${e.type}">
+        <div class="card-title">${e.word} <span class="tag">${e.type}</span></div>
+        <div><b>Türkçe:</b> ${e.tr}</div>
+        ${ex ? `<div class="ar ex">${ex}</div>` : ""}
+        ${e.exTr ? `<div>${e.exTr}</div>` : ""}
+        ${e.note ? `<div><i>Not:</i> ${e.note}</div>` : ""}
+        <button class="edit" onclick="editEntry(${e.id})">Düzenle</button>
+        <button class="delete" onclick="deleteEntry(${e.id})">Sil</button>
+      </div>`;
+  });
 }
 
-// ARAMA KUTUSU EVENT
+// ARAMA EVENT
 document.getElementById("search").addEventListener("input", render);
 
-// EKLEME FORMU
+// EKLEME / DÜZENLEME FORMU
 document.getElementById("entryForm").addEventListener("submit", function(e){
   e.preventDefault();
+  const id = document.getElementById("editId").value;
   const word = document.getElementById("word").value.trim();
   const tr = document.getElementById("tr").value.trim();
-  if(!word || !tr) { alert("Arapça kelime ve Türkçe karşılık zorunlu"); return; }
-
-  const entry = {
-    id: Date.now(),
-    type: document.getElementById("type").value,
-    word,
-    tr,
-    exAr: document.getElementById("exAr").value.trim(),
-    exTr: document.getElementById("exTr").value.trim(),
-    note: document.getElementById("note").value.trim()
-  };
+  if(!word || !tr){ alert("Arapça kelime ve Türkçe karşılık zorunlu"); return; }
 
   const data = JSON.parse(localStorage.getItem("dict") || "[]");
-  data.unshift(entry);
-  localStorage.setItem("dict", JSON.stringify(data));
 
+  if(id){ // düzenleme
+    const index = data.findIndex(x => x.id == id);
+    if(index>-1){
+      data[index] = {
+        id: Number(id),
+        type: document.getElementById("type").value,
+        word, tr,
+        exAr: document.getElementById("exAr").value.trim(),
+        exTr: document.getElementById("exTr").value.trim(),
+        note: document.getElementById("note").value.trim()
+      };
+    }
+    alert("Kelime güncellendi!");
+  } else { // yeni ekleme
+    data.unshift({
+      id: Date.now(),
+      type: document.getElementById("type").value,
+      word, tr,
+      exAr: document.getElementById("exAr").value.trim(),
+      exTr: document.getElementById("exTr").value.trim(),
+      note: document.getElementById("note").value.trim()
+    });
+    alert("Kelime eklendi!");
+  }
+
+  localStorage.setItem("dict", JSON.stringify(data));
   this.reset();
-  alert("Kelime eklendi!");
+  document.getElementById("editId").value = "";
+  render();
+  showSection('search');
 });
+
+// DÜZENLEME FONKSİYONU
+function editEntry(id){
+  const data = JSON.parse(localStorage.getItem("dict") || "[]");
+  const entry = data.find(e => e.id==id);
+  if(!entry) return;
+  showSection('add');
+  document.getElementById("editId").value = entry.id;
+  document.getElementById("type").value = entry.type;
+  document.getElementById("word").value = entry.word;
+  document.getElementById("tr").value = entry.tr;
+  document.getElementById("exAr").value = entry.exAr;
+  document.getElementById("exTr").value = entry.exTr;
+  document.getElementById("note").value = entry.note;
+}
+
+// SİLME FONKSİYONU
+function deleteEntry(id){
+  if(!confirm("Bu kelimeyi silmek istediğinize emin misiniz?")) return;
+  let data = JSON.parse(localStorage.getItem("dict") || "[]");
+  data = data.filter(e => e.id != id);
+  localStorage.setItem("dict", JSON.stringify(data));
+  render();
+}
 
 // SAYFA AÇILIRKEN RENDER ET
 render();
