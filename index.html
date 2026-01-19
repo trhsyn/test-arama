@@ -44,7 +44,8 @@ input { width:100%; padding:10px; font-size:18px; }
 </form>
 
 <hr>
-
+}
+  
 function normalizeArabic(text) {
   return text
     .replace(/[\u064B-\u065F\u0670]/g, "")
@@ -77,8 +78,6 @@ function render() {
           <div class="ar">${e.exAr}</div>
         </div>`;
     }
-  });
-}
 
 search.addEventListener("input", render);
 render();
