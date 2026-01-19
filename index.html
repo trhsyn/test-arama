@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Arapça Arama Testi</title>
+<style>
+body { font-family: system-ui; padding:20px; }
+input { width:100%; padding:10px; font-size:18px; }
+.card { margin-top:15px; padding:10px; border:1px solid #ccc; }
+.ar { font-size:22px; direction:rtl; }
+</style>
+</head>
+<body>
+
+<h2>🔍 Arapça Arama Testi</h2>
+
+<input id="search" placeholder="كتب / كَتَبَ / كاتب">
+
+<div id="list"></div>
+
+<script>
+const data = [
+  {
+    word: "كَتَبَ",
+    meaning: "yazdı",
+    exAr: "كَتَبَ الطَّالِبُ الدَّرْسَ"
+  }
+];
+
+function normalizeArabic(text) {
+  return text
+    .replace(/[\u064B-\u065F\u0670]/g, "")
+    .replace(/\u0640/g, "")
+    .replace(/[آأإٱ]/g, "ا")
+    .replace(/[يى]/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/ؤ/g, "و")
+    .replace(/ئ/g, "ي");
+}
+
+const search = document.getElementById("search");
+const list = document.getElementById("list");
+
+function render() {
+  const q = normalizeArabic(search.value.trim());
+  list.innerHTML = "";
+
+  data.forEach(e => {
+    const haystack =
+      normalizeArabic(e.word + " " + e.exAr);
+
+    if (haystack.includes(q)) {
+      list.innerHTML = `
+        <div class="card">
+          <div class="ar">${e.word}</div>
+          <div>${e.meaning}</div>
+          <div class="ar">${e.exAr}</div>
+        </div>`;
+    }
+  });
+}
+
+search.addEventListener("input", render);
+render();
+</script>
+
+</body>
+</html>
