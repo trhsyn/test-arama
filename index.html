@@ -11,32 +11,38 @@ button { cursor:pointer; background:#2563eb; color:white; border:none; border-ra
 button:hover { background:#1d4ed8; }
 .nav-btns { margin-bottom:20px; }
 .nav-btns button { width:auto; margin-right:10px; }
-.card { margin-top:15px; padding:15px; border-radius:8px; color:white; box-shadow: 0 2px 6px rgba(0,0,0,0.1); position: relative; }
-.card-title { font-weight:bold; font-size:18px; margin-bottom:5px; }
-.tag { background:rgba(255,255,255,0.3); color:white; padding:2px 6px; border-radius:4px; font-size:12px; margin-left:5px; }
+.card { margin-top:15px; padding:15px; border-radius:8px; color:white; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
 .ar { font-size:22px; direction:rtl; font-family: "Scheherazade", "Amiri", serif; margin-top:5px; }
 .ex strong.hl { background:#ffeb3b; color:#000; padding:0 2px; border-radius:2px; }
 
-/* RENKLENDİRME */
+/* RENKLER */
 .card.isim { background:#16a34a; }   /* yeşil */
 .card.fiil { background:#2563eb; }   /* mavi */
 .card.mastar { background:#f97316; } /* turuncu */
 .card.deyim { background:#7c3aed; }  /* mor */
 
-/* Edit / Delete butonları */
-.card button.edit, .card button.delete {
-  position: absolute;
-  top:10px;
-  padding:4px 8px;
-  font-size:12px;
-  border-radius:4px;
-  border:none;
-  color:white;
+/* FLEX İLE BAŞLIK + BUTONLAR */
+.card-title-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
 }
-.card button.edit { right: 60px; background:#fbbf24; }
-.card button.delete { right: 10px; background:#ef4444; }
-.card button.edit:hover { background:#f59e0b; }
-.card button.delete:hover { background:#dc2626; }
+.card-title-container .left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.card-title-container .left .card-title { font-weight:bold; font-size:18px; margin-right:8px; }
+.card-title-container .left .tag { background:rgba(255,255,255,0.3); color:white; padding:2px 6px; border-radius:4px; font-size:12px; }
+
+.card-title-container .right button {
+  margin-left:5px; padding:4px 8px; font-size:12px; border-radius:4px; border:none; cursor:pointer; color:white;
+}
+.card-title-container .right button.edit { background:#fbbf24; }
+.card-title-container .right button.delete { background:#ef4444; }
+.card-title-container .right button.edit:hover { background:#f59e0b; }
+.card-title-container .right button.delete:hover { background:#dc2626; }
 </style>
 </head>
 <body>
@@ -104,7 +110,7 @@ function normalizeArabic(text){
              .replace(/ئ/g,"ي").trim();
 }
 
-// RENDER FONKSİYONU
+// RENDER
 function render(){
   const list = document.getElementById("list");
   const query = document.getElementById("search").value.trim();
@@ -123,13 +129,20 @@ function render(){
     }
     list.innerHTML += `
       <div class="card ${e.type}">
-        <div class="card-title">${e.word} <span class="tag">${e.type}</span></div>
+        <div class="card-title-container">
+          <div class="left">
+            <div class="card-title">${e.word}</div>
+            <span class="tag">${e.type}</span>
+          </div>
+          <div class="right">
+            <button class="edit" onclick="editEntry(${e.id})">Düzenle</button>
+            <button class="delete" onclick="deleteEntry(${e.id})">Sil</button>
+          </div>
+        </div>
         <div><b>Türkçe:</b> ${e.tr}</div>
         ${ex ? `<div class="ar ex">${ex}</div>` : ""}
         ${e.exTr ? `<div>${e.exTr}</div>` : ""}
         ${e.note ? `<div><i>Not:</i> ${e.note}</div>` : ""}
-        <button class="edit" onclick="editEntry(${e.id})">Düzenle</button>
-        <button class="delete" onclick="deleteEntry(${e.id})">Sil</button>
       </div>`;
   });
 }
@@ -179,7 +192,7 @@ document.getElementById("entryForm").addEventListener("submit", function(e){
   showSection('search');
 });
 
-// DÜZENLEME FONKSİYONU
+// DÜZENLEME
 function editEntry(id){
   const data = JSON.parse(localStorage.getItem("dict") || "[]");
   const entry = data.find(e => e.id==id);
@@ -194,7 +207,7 @@ function editEntry(id){
   document.getElementById("note").value = entry.note;
 }
 
-// SİLME FONKSİYONU
+// SİL
 function deleteEntry(id){
   if(!confirm("Bu kelimeyi silmek istediğinize emin misiniz?")) return;
   let data = JSON.parse(localStorage.getItem("dict") || "[]");
