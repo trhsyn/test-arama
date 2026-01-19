@@ -5,17 +5,17 @@
 <title>Arapça-Türkçe Sözlük</title>
 <style>
 body { font-family: system-ui; padding:20px; background:#f9f9f9; }
-h2 { margin-top:30px; }
+h2 { margin-top:20px; }
 input, textarea, select, button { width:100%; padding:8px; margin:5px 0 15px 0; font-size:16px; box-sizing:border-box; }
 button { cursor:pointer; background:#2563eb; color:white; border:none; border-radius:5px; font-size:16px; }
 button:hover { background:#1d4ed8; }
+.nav-btns { margin-bottom:20px; }
+.nav-btns button { width:auto; margin-right:10px; }
 .card { margin-top:15px; padding:10px; border-radius:8px; color:white; }
 .card-title { font-weight:bold; font-size:18px; margin-bottom:5px; }
 .tag { background:rgba(255,255,255,0.3); color:white; padding:2px 6px; border-radius:4px; font-size:12px; margin-left:5px; }
 .ar { font-size:22px; direction:rtl; font-family: "Scheherazade", "Amiri", serif; }
 .ex strong.hl { background:#ffeb3b; color:#000; padding:0 2px; }
-
-/* RENKLENDİRME */
 .card.isim { background:#16a34a; }   /* yeşil */
 .card.fiil { background:#2563eb; }   /* mavi */
 .card.mastar { background:#f97316; } /* turuncu */
@@ -24,6 +24,13 @@ button:hover { background:#1d4ed8; }
 </head>
 <body>
 
+<div class="nav-btns">
+  <button onclick="showSection('add')">Kelime Ekle</button>
+  <button onclick="showSection('search')">Kelime Ara</button>
+</div>
+
+<!-- EKLEME BÖLÜMÜ -->
+<div id="add-section">
 <h2>Kelime Ekle</h2>
 <form id="entryForm">
   <label>Kelime Türü</label>
@@ -51,13 +58,22 @@ button:hover { background:#1d4ed8; }
 
   <button type="submit">➕ Ekle</button>
 </form>
+</div>
 
+<!-- ARAMA BÖLÜMÜ -->
+<div id="search-section" style="display:none;">
 <h2>Kelime Arama</h2>
 <input id="search" placeholder="Arapça veya Türkçe arayın">
-
 <div id="list"></div>
+</div>
 
 <script>
+// GÖRÜNÜRLÜK YÖNETİMİ
+function showSection(sec) {
+  document.getElementById('add-section').style.display = sec==='add'?'block':'none';
+  document.getElementById('search-section').style.display = sec==='search'?'block':'none';
+}
+
 // ARAPÇA NORMALİZASYON
 function normalizeArabic(text) {
   if(!text) return "";
@@ -129,7 +145,7 @@ document.getElementById("entryForm").addEventListener("submit", function(e){
   localStorage.setItem("dict", JSON.stringify(data));
 
   this.reset();
-  render();
+  alert("Kelime eklendi!");
 });
 
 // SAYFA AÇILIRKEN RENDER ET
