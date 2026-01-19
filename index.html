@@ -9,11 +9,17 @@ h2 { margin-top:30px; }
 input, textarea, select, button { width:100%; padding:8px; margin:5px 0 15px 0; font-size:16px; box-sizing:border-box; }
 button { cursor:pointer; background:#2563eb; color:white; border:none; border-radius:5px; font-size:16px; }
 button:hover { background:#1d4ed8; }
-.card { margin-top:15px; padding:10px; border:1px solid #ccc; border-radius:8px; background:white; }
+.card { margin-top:15px; padding:10px; border-radius:8px; color:white; }
 .card-title { font-weight:bold; font-size:18px; margin-bottom:5px; }
-.tag { background:#f59e0b; color:white; padding:2px 6px; border-radius:4px; font-size:12px; margin-left:5px; }
+.tag { background:rgba(255,255,255,0.3); color:white; padding:2px 6px; border-radius:4px; font-size:12px; margin-left:5px; }
 .ar { font-size:22px; direction:rtl; font-family: "Scheherazade", "Amiri", serif; }
 .ex strong.hl { background:#ffeb3b; color:#000; padding:0 2px; }
+
+/* RENKLENDİRME */
+.card.isim { background:#16a34a; }   /* yeşil */
+.card.fiil { background:#2563eb; }   /* mavi */
+.card.mastar { background:#f97316; } /* turuncu */
+.card.deyim { background:#7c3aed; }  /* mor */
 </style>
 </head>
 <body>
@@ -56,13 +62,13 @@ button:hover { background:#1d4ed8; }
 function normalizeArabic(text) {
   if(!text) return "";
   return text
-    .replace(/[\u064B-\u065F\u0670]/g,"") // Tüm harekeler
-    .replace(/\u0640/g,"")                 // Tatweel
-    .replace(/[آأإٱ]/g,"ا")                // Elif çeşitleri
-    .replace(/[يى]/g,"ي")                  // Ya
-    .replace(/ة/g,"ه")                     // Te marbuta
-    .replace(/ؤ/g,"و")                     // Hemzeli Vav
-    .replace(/ئ/g,"ي")                     // Hemzeli Ya
+    .replace(/[\u064B-\u065F\u0670]/g,"")
+    .replace(/\u0640/g,"")
+    .replace(/[آأإٱ]/g,"ا")
+    .replace(/[يى]/g,"ي")
+    .replace(/ة/g,"ه")
+    .replace(/ؤ/g,"و")
+    .replace(/ئ/g,"ي")
     .trim();
 }
 
@@ -86,7 +92,7 @@ function render() {
         `<strong class="hl">${e.word}</strong>`
       );
       list.innerHTML += `
-        <div class="card">
+        <div class="card ${e.type}">
           <div class="card-title">
             ${e.word} <span class="tag">${e.type}</span>
           </div>
@@ -94,8 +100,7 @@ function render() {
           ${e.exAr ? `<div class="ar ex">${ex}</div>` : ""}
           ${e.exTr ? `<div>${e.exTr}</div>` : ""}
           ${e.note ? `<div><i>Not:</i> ${e.note}</div>` : ""}
-        </div>
-      `;
+        </div>`;
     });
 }
 
@@ -120,7 +125,7 @@ document.getElementById("entryForm").addEventListener("submit", function(e){
   };
 
   const data = JSON.parse(localStorage.getItem("dict") || "[]");
-  data.unshift(entry); // en başa ekle
+  data.unshift(entry);
   localStorage.setItem("dict", JSON.stringify(data));
 
   this.reset();
