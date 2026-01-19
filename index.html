@@ -53,6 +53,7 @@ button:hover { background:#1d4ed8; }
   <button onclick="showSection('search')">Kelime Ara</button>
 </div>
 
+<!-- EKLEME BÖLÜMÜ -->
 <div id="add-section">
 <h2>Kelime Ekle / Düzenle</h2>
 <form id="entryForm">
@@ -84,6 +85,7 @@ button:hover { background:#1d4ed8; }
 </form>
 </div>
 
+<!-- ARAMA BÖLÜMÜ -->
 <div id="search-section" style="display:none;">
 <h2>Kelime Arama</h2>
 <input id="search" placeholder="Arapça veya Türkçe arayın">
@@ -91,11 +93,13 @@ button:hover { background:#1d4ed8; }
 </div>
 
 <script>
+// GÖRÜNÜRLÜK
 function showSection(sec){
   document.getElementById('add-section').style.display = sec==='add'?'block':'none';
   document.getElementById('search-section').style.display = sec==='search'?'block':'none';
 }
 
+// ARAPÇA NORMALİZASYON
 function normalizeArabic(text){
   if(!text) return "";
   return text.replace(/[\u064B-\u065F\u0670]/g,"")
@@ -107,6 +111,7 @@ function normalizeArabic(text){
              .replace(/ئ/g,"ي").trim();
 }
 
+// RENDER
 function render(){
   const list = document.getElementById("list");
   const query = document.getElementById("search").value.trim();
@@ -143,8 +148,12 @@ function render(){
   });
 }
 
-document.getElementById("search").addEventListener("input", render);
+// ARAMA EVENT (mobil ve masaüstü uyumlu)
+const searchInput = document.getElementById("search");
+searchInput.addEventListener("input", render);
+searchInput.addEventListener("keyup", render); // mobil klavye uyumu
 
+// EKLEME / DÜZENLEME FORMU
 document.getElementById("entryForm").addEventListener("submit", function(e){
   e.preventDefault();
   const id = document.getElementById("editId").value;
@@ -186,6 +195,7 @@ document.getElementById("entryForm").addEventListener("submit", function(e){
   showSection('search');
 });
 
+// DÜZENLEME
 function editEntry(id){
   const data = JSON.parse(localStorage.getItem("dict") || "[]");
   const entry = data.find(e => e.id==id);
@@ -200,6 +210,7 @@ function editEntry(id){
   document.getElementById("note").value = entry.note;
 }
 
+// SİL
 function deleteEntry(id){
   if(!confirm("Bu kelimeyi silmek istediğinize emin misiniz?")) return;
   let data = JSON.parse(localStorage.getItem("dict") || "[]");
@@ -208,6 +219,7 @@ function deleteEntry(id){
   render();
 }
 
+// SAYFA AÇILIRKEN RENDER ET
 render();
 </script>
 
