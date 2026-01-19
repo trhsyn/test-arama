@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<title>Arapça-Türkçe Sözlük (Firebase)</title>
+<title>Arapça-Türkçe Sözlük (Firestore)</title>
 <style>
 body { font-family: system-ui; padding:20px; background:#f5f5f5; margin:0; }
 h2 { margin-top:20px; }
@@ -12,29 +12,19 @@ button:hover { background:#1d4ed8; }
 .nav-btns { margin-bottom:20px; display:flex; flex-wrap:wrap; gap:10px; }
 .nav-btns button { width:auto; }
 #list { display:grid; grid-template-columns:1fr; gap:15px; }
-
 @media(min-width:600px){ #list { grid-template-columns:1fr 1fr; } }
 @media(min-width:900px){ #list { grid-template-columns:1fr 1fr 1fr; } }
-
 .card { padding:15px; border-radius:8px; color:white; box-shadow:0 2px 6px rgba(0,0,0,0.1); display:flex; flex-direction:column; }
 .ar { font-size:22px; direction:rtl; font-family:"Scheherazade","Amiri",serif; margin-top:5px; }
 .ex strong.hl { background:#ffeb3b; color:#000; padding:0 2px; border-radius:2px; }
-
 .card.isim { background:#16a34a; }
 .card.fiil { background:#2563eb; }
 .card.mastar { background:#f97316; }
 .card.deyim { background:#7c3aed; }
-
-.card-title-container {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  flex-wrap:wrap;
-}
+.card-title-container { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; }
 .card-title-container .left { display:flex; align-items:center; flex-wrap:wrap; }
 .card-title-container .left .card-title { font-weight:bold; font-size:18px; margin-right:8px; }
 .card-title-container .left .tag { background:rgba(255,255,255,0.3); color:white; padding:2px 6px; border-radius:4px; font-size:12px; }
-
 .card-title-container .right button { margin-left:5px; padding:4px 8px; font-size:12px; border-radius:4px; border:none; cursor:pointer; color:white; margin-top:5px; }
 .card-title-container .right button.edit { background:#fbbf24; }
 .card-title-container .right button.delete { background:#ef4444; }
@@ -88,17 +78,10 @@ button:hover { background:#1d4ed8; }
 
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <script>
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// 🔹 FIREBASE CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyA1Fmoo3_bJTT2R2hCjBoQTBhiohwfdnk0",
   authDomain: "sozluk-e49c1.firebaseapp.com",
@@ -107,28 +90,27 @@ const firebaseConfig = {
   messagingSenderId: "996478619056",
   appId: "1:996478619056:web:11840e7fbda02b84ad9a75",
   measurementId: "G-6075H1T8JV"
+};const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app); const firebaseConfig = {
-  apiKey: "XXX",
-  authDomain: "XXX.firebaseapp.com",
-  databaseURL: "https://XXX-default-rtdb.firebaseio.com",
-  projectId: "XXX",
-  storageBucket: "XXX.appspot.com",
-  messagingSenderId: "XXX",
-  appId: "XXX"
-};
-
+// Firebase başlat
 firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+const db = firebase.firestore();
+const wordsCol = db.collection("words");
 
+// Bölüm göster/gizle
 function showSection(sec){
   document.getElementById('add-section').style.display = sec==='add'?'block':'none';
   document.getElementById('search-section').style.display = sec==='search'?'block':'none';
 }
 
+// Arapça normalize
 function normalizeArabic(text){
   if(!text) return "";
   return text.replace(/[\u064B-\u065F\u0670]/g,"")
@@ -140,26 +122,23 @@ function normalizeArabic(text){
              .replace(/ئ/g,"ي").trim();
 }
 
-// RENDER
+// Render
 function render(){
-  const list = document.getElementById("list");
   const query = document.getElementById("search").value.trim();
-  db.ref('words').once('value', snapshot => {
-    const dataObj = snapshot.val() || {};
-    const data = Object.values(dataObj);
-    list.innerHTML = "";
-
-    data.filter(e => {
-      const ar = normalizeArabic(e.word + " " + (e.exAr || ""));
-      const tr = (e.tr || "").toLowerCase();
-      return ar.includes(normalizeArabic(query)) || tr.includes(query.toLowerCase());
-    }).forEach(e => {
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+  wordsCol.get().then(snapshot=>{
+    snapshot.forEach(doc=>{
+      const e = doc.data();
       let ex = e.exAr || "";
       if(query){
         const qReg = new RegExp(query,"gi");
         ex = ex.replace(qReg, match => `<strong class="hl">${match}</strong>`);
       }
-      list.innerHTML += `
+      const trLower = (e.tr || "").toLowerCase();
+      const arNorm = normalizeArabic(e.word + " " + (e.exAr || ""));
+      if(!query || arNorm.includes(normalizeArabic(query)) || trLower.includes(query.toLowerCase())){
+        list.innerHTML += `
         <div class="card ${e.type}">
           <div class="card-title-container">
             <div class="left">
@@ -167,8 +146,8 @@ function render(){
               <span class="tag">${e.type}</span>
             </div>
             <div class="right">
-              <button class="edit" onclick="editEntry('${e.id}')">Düzenle</button>
-              <button class="delete" onclick="deleteEntry('${e.id}')">Sil</button>
+              <button class="edit" onclick="editEntry('${doc.id}')">Düzenle</button>
+              <button class="delete" onclick="deleteEntry('${doc.id}')">Sil</button>
             </div>
           </div>
           <div><b>Türkçe:</b> ${e.tr}</div>
@@ -176,20 +155,19 @@ function render(){
           ${e.exTr ? `<div>${e.exTr}</div>` : ""}
           ${e.note ? `<div><i>Not:</i> ${e.note}</div>` : ""}
         </div>`;
+      }
     });
   });
 }
 
-// Mobil ve masaüstü arama uyumu
+// Arama input
 document.getElementById("search").addEventListener("input", render);
-document.getElementById("search").addEventListener("keyup", render);
 
-// EKLEME / DÜZENLEME
+// Ekle/Düzenle
 document.getElementById("entryForm").addEventListener("submit", function(e){
   e.preventDefault();
-  const id = document.getElementById("editId").value || db.ref().child('words').push().key;
+  let id = document.getElementById("editId").value;
   const entry = {
-    id,
     type: document.getElementById("type").value,
     word: document.getElementById("word").value.trim(),
     tr: document.getElementById("tr").value.trim(),
@@ -197,40 +175,48 @@ document.getElementById("entryForm").addEventListener("submit", function(e){
     exTr: document.getElementById("exTr").value.trim(),
     note: document.getElementById("note").value.trim()
   };
-
-  db.ref('words/' + id).set(entry).then(()=>{
-    alert(id ? "Kelime güncellendi!" : "Kelime eklendi!");
-    document.getElementById("entryForm").reset();
-    document.getElementById("editId").value = "";
-    render();
-    showSection('search');
-  });
+  if(id){
+    wordsCol.doc(id).set(entry).then(()=>{
+      alert("Kelime güncellendi!");
+      document.getElementById("entryForm").reset();
+      document.getElementById("editId").value = "";
+      showSection('search');
+      render();
+    });
+  } else {
+    wordsCol.add(entry).then(()=>{
+      alert("Kelime eklendi!");
+      document.getElementById("entryForm").reset();
+      showSection('search');
+      render();
+    });
+  }
 });
 
-// DÜZENLEME
+// Düzenle
 function editEntry(id){
-  db.ref('words/' + id).once('value', snap=>{
-    const entry = snap.val();
-    if(!entry) return;
+  wordsCol.doc(id).get().then(doc=>{
+    const e = doc.data();
     showSection('add');
-    document.getElementById("editId").value = entry.id;
-    document.getElementById("type").value = entry.type;
-    document.getElementById("word").value = entry.word;
-    document.getElementById("tr").value = entry.tr;
-    document.getElementById("exAr").value = entry.exAr;
-    document.getElementById("exTr").value = entry.exTr;
-    document.getElementById("note").value = entry.note;
+    document.getElementById("editId").value = doc.id;
+    document.getElementById("type").value = e.type;
+    document.getElementById("word").value = e.word;
+    document.getElementById("tr").value = e.tr;
+    document.getElementById("exAr").value = e.exAr;
+    document.getElementById("exTr").value = e.exTr;
+    document.getElementById("note").value = e.note;
   });
 }
 
-// SİL
+// Sil
 function deleteEntry(id){
   if(!confirm("Bu kelimeyi silmek istediğinize emin misiniz?")) return;
-  db.ref('words/' + id).remove().then(()=>{ render(); });
+  wordsCol.doc(id).delete().then(()=>render());
 }
 
-// Sayfa açıldığında render et
+// Sayfa açıldığında render
 render();
 </script>
+
 </body>
 </html>
