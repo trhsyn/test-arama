@@ -4,41 +4,42 @@
 <meta charset="UTF-8">
 <title>Arapça-Türkçe Sözlük</title>
 <style>
-body { font-family: system-ui; padding:20px; background:#f5f5f5; }
+body { font-family: system-ui; padding:20px; background:#f5f5f5; margin:0; }
 h2 { margin-top:20px; }
 input, textarea, select, button { width:100%; padding:8px; margin:5px 0 15px 0; font-size:16px; box-sizing:border-box; border-radius:5px; border:1px solid #ccc; }
 button { cursor:pointer; background:#2563eb; color:white; border:none; border-radius:5px; font-size:16px; padding:8px; }
 button:hover { background:#1d4ed8; }
-.nav-btns { margin-bottom:20px; }
-.nav-btns button { width:auto; margin-right:10px; }
-.card { margin-top:15px; padding:15px; border-radius:8px; color:white; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-.ar { font-size:22px; direction:rtl; font-family: "Scheherazade", "Amiri", serif; margin-top:5px; }
+.nav-btns { margin-bottom:20px; display:flex; flex-wrap:wrap; gap:10px; }
+.nav-btns button { width:auto; }
+#list { display:grid; grid-template-columns:1fr; gap:15px; }
+
+@media(min-width:600px){
+  #list { grid-template-columns:1fr 1fr; }
+}
+@media(min-width:900px){
+  #list { grid-template-columns:1fr 1fr 1fr; }
+}
+
+.card { padding:15px; border-radius:8px; color:white; box-shadow:0 2px 6px rgba(0,0,0,0.1); display:flex; flex-direction:column; }
+.ar { font-size:22px; direction:rtl; font-family:"Scheherazade","Amiri",serif; margin-top:5px; }
 .ex strong.hl { background:#ffeb3b; color:#000; padding:0 2px; border-radius:2px; }
 
-/* RENKLER */
-.card.isim { background:#16a34a; }   /* yeşil */
-.card.fiil { background:#2563eb; }   /* mavi */
-.card.mastar { background:#f97316; } /* turuncu */
-.card.deyim { background:#7c3aed; }  /* mor */
+.card.isim { background:#16a34a; }
+.card.fiil { background:#2563eb; }
+.card.mastar { background:#f97316; }
+.card.deyim { background:#7c3aed; }
 
-/* FLEX İLE BAŞLIK + BUTONLAR */
 .card-title-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
 }
-.card-title-container .left {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-}
+.card-title-container .left { display:flex; align-items:center; flex-wrap:wrap; }
 .card-title-container .left .card-title { font-weight:bold; font-size:18px; margin-right:8px; }
 .card-title-container .left .tag { background:rgba(255,255,255,0.3); color:white; padding:2px 6px; border-radius:4px; font-size:12px; }
 
-.card-title-container .right button {
-  margin-left:5px; padding:4px 8px; font-size:12px; border-radius:4px; border:none; cursor:pointer; color:white;
-}
+.card-title-container .right button { margin-left:5px; padding:4px 8px; font-size:12px; border-radius:4px; border:none; cursor:pointer; color:white; margin-top:5px; }
 .card-title-container .right button.edit { background:#fbbf24; }
 .card-title-container .right button.delete { background:#ef4444; }
 .card-title-container .right button.edit:hover { background:#f59e0b; }
@@ -52,7 +53,6 @@ button:hover { background:#1d4ed8; }
   <button onclick="showSection('search')">Kelime Ara</button>
 </div>
 
-<!-- EKLEME BÖLÜMÜ -->
 <div id="add-section">
 <h2>Kelime Ekle / Düzenle</h2>
 <form id="entryForm">
@@ -84,7 +84,6 @@ button:hover { background:#1d4ed8; }
 </form>
 </div>
 
-<!-- ARAMA BÖLÜMÜ -->
 <div id="search-section" style="display:none;">
 <h2>Kelime Arama</h2>
 <input id="search" placeholder="Arapça veya Türkçe arayın">
@@ -92,13 +91,11 @@ button:hover { background:#1d4ed8; }
 </div>
 
 <script>
-// GÖRÜNÜRLÜK
 function showSection(sec){
   document.getElementById('add-section').style.display = sec==='add'?'block':'none';
   document.getElementById('search-section').style.display = sec==='search'?'block':'none';
 }
 
-// ARAPÇA NORMALİZASYON
 function normalizeArabic(text){
   if(!text) return "";
   return text.replace(/[\u064B-\u065F\u0670]/g,"")
@@ -110,7 +107,6 @@ function normalizeArabic(text){
              .replace(/ئ/g,"ي").trim();
 }
 
-// RENDER
 function render(){
   const list = document.getElementById("list");
   const query = document.getElementById("search").value.trim();
@@ -147,10 +143,8 @@ function render(){
   });
 }
 
-// ARAMA EVENT
 document.getElementById("search").addEventListener("input", render);
 
-// EKLEME / DÜZENLEME FORMU
 document.getElementById("entryForm").addEventListener("submit", function(e){
   e.preventDefault();
   const id = document.getElementById("editId").value;
@@ -160,7 +154,7 @@ document.getElementById("entryForm").addEventListener("submit", function(e){
 
   const data = JSON.parse(localStorage.getItem("dict") || "[]");
 
-  if(id){ // düzenleme
+  if(id){
     const index = data.findIndex(x => x.id == id);
     if(index>-1){
       data[index] = {
@@ -173,7 +167,7 @@ document.getElementById("entryForm").addEventListener("submit", function(e){
       };
     }
     alert("Kelime güncellendi!");
-  } else { // yeni ekleme
+  } else {
     data.unshift({
       id: Date.now(),
       type: document.getElementById("type").value,
@@ -192,7 +186,6 @@ document.getElementById("entryForm").addEventListener("submit", function(e){
   showSection('search');
 });
 
-// DÜZENLEME
 function editEntry(id){
   const data = JSON.parse(localStorage.getItem("dict") || "[]");
   const entry = data.find(e => e.id==id);
@@ -207,7 +200,6 @@ function editEntry(id){
   document.getElementById("note").value = entry.note;
 }
 
-// SİL
 function deleteEntry(id){
   if(!confirm("Bu kelimeyi silmek istediğinize emin misiniz?")) return;
   let data = JSON.parse(localStorage.getItem("dict") || "[]");
@@ -216,7 +208,6 @@ function deleteEntry(id){
   render();
 }
 
-// SAYFA AÇILIRKEN RENDER ET
 render();
 </script>
 
